@@ -1,0 +1,19 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Run outputs. These may be organized per case and hold real clinical runs,
+# so everything under results/ is ignored by default.
+kimlik_output/
+output_*/
+kimlik_state.json
+results/*
+
+# ...except the committed demo run, which uses a synthetic textbook case.
+!results/example-osteosarcoma-lung-met/
+!results/example-osteosarcoma-lung-met/**

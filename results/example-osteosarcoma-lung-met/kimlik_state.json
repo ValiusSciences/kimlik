@@ -1,0 +1,66 @@
+{
+  "biopsy_site": "right lung",
+  "tumor_diagnosis": "metastatic osteosarcoma (primary: distal femur)",
+  "output_dir": "results/example-osteosarcoma-lung-met",
+  "models": {
+    "openai_phase1": "gpt-5.5-pro",
+    "openai_phase2": "gpt-5.5",
+    "anthropic": "claude-opus-5",
+    "parallel_processor": "ultra8x"
+  },
+  "created_at": "2026-07-29T03:27:14.727605+00:00",
+  "phase1": {
+    "openai": {
+      "status": "completed",
+      "output_file": "phase1_openai.md",
+      "task_id": "resp_0d9fd600bb2116eb006a697314283881a3aabec6c7c8c50423",
+      "started_at": "2026-07-29T03:27:14.732454+00:00",
+      "completed_at": "2026-07-29T03:39:26.504604+00:00",
+      "error": null
+    },
+    "parallel": {
+      "status": "completed",
+      "output_file": "phase1_parallel.md",
+      "task_id": "trun_a2d34604bfcd4f02bcd4cf39e2200004",
+      "started_at": "2026-07-29T03:27:15.189696+00:00",
+      "completed_at": "2026-07-29T04:11:21.785488+00:00",
+      "error": null
+    },
+    "anthropic": {
+      "status": "completed",
+      "output_file": "phase1_anthropic.md",
+      "task_id": null,
+      "started_at": "2026-07-29T04:22:00.122474+00:00",
+      "completed_at": "2026-07-29T04:31:19.923819+00:00",
+      "error": null
+    }
+  },
+  "phase2": {
+    "openai": {
+      "status": "completed",
+      "output_file": "phase2_openai_consensus.md",
+      "task_id": null,
+      "started_at": "2026-07-29T04:31:19.932822+00:00",
+      "completed_at": "2026-07-29T04:33:55.222300+00:00",
+      "error": null
+    },
+    "anthropic": {
+      "status": "completed",
+      "output_file": "phase2_anthropic_consensus.md",
+      "task_id": null,
+      "started_at": "2026-07-29T04:31:20.171582+00:00",
+      "completed_at": "2026-07-29T04:39:16.318453+00:00",
+      "error": null
+    }
+  },
+  "phase3": {
+    "anthropic": {
+      "status": "completed",
+      "output_file": "phase3_final.md",
+      "task_id": null,
+      "started_at": "2026-07-29T04:45:17.469023+00:00",
+      "completed_at": "2026-07-29T04:51:57.255701+00:00",
+      "error": null
+    }
+  }
+}
