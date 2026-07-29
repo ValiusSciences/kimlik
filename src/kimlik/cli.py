@@ -81,6 +81,48 @@ def check_api_keys() -> None:
     raise typer.Exit(1)
 
 
+def format_duration(seconds: float) -> str:
+    """Render a span the way someone reading a terminal wants to see it."""
+    seconds = int(seconds)
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m {seconds % 60:02d}s"
+    return f"{seconds // 3600}h {(seconds % 3600) // 60:02d}m"
+
+
+def task_duration(task: dict) -> str:
+    """How long one provider took, or '-' if it never ran to completion."""
+    started, completed = task.get("started_at"), task.get("completed_at")
+    if not started or not completed:
+        return "-"
+    try:
+        elapsed = (
+            datetime.fromisoformat(completed) - datetime.fromisoformat(started)
+        ).total_seconds()
+    except ValueError:
+        return "-"
+    return format_duration(elapsed) if elapsed >= 0 else "-"
+
+
+def wall_clock(state: dict) -> str:
+    """Total elapsed time across the run.
+
+    Phase 1 providers run concurrently, so this is the span from the first
+    start to the last finish, not the sum of the parts.
+    """
+    starts, ends = [], []
+    for phase in ("phase1", "phase2", "phase3"):
+        for task in state.get(phase, {}).values():
+            if task.get("started_at"):
+                starts.append(datetime.fromisoformat(task["started_at"]))
+            if task.get("completed_at"):
+                ends.append(datetime.fromisoformat(task["completed_at"]))
+    if not starts or not ends:
+        return "-"
+    return format_duration((max(ends) - min(starts)).total_seconds())
+
+
 def write_report(output_dir: Path, filename: str, content: str, label: str) -> str:
     """Write a provider's report, refusing to accept an empty or stunted one."""
     stripped = content.strip()
@@ -453,6 +495,7 @@ async def run_pipeline(
     table.add_column("Phase", style="bold")
     table.add_column("Provider")
     table.add_column("Status")
+    table.add_column("Duration", justify="right")
     table.add_column("Output file")
     table.add_column("Error")
 
@@ -470,11 +513,16 @@ async def run_pipeline(
                 label,
                 prov,
                 status_str,
+                task_duration(ts),
                 ts.get("output_file") or "-",
                 ts.get("error") or "",
             )
 
     console.print(table)
+    console.print(
+        f"Total wall time: [bold]{wall_clock(state)}[/bold] "
+        "(Phase 1 providers run concurrently, so this is less than the sum above)."
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,12 @@ _POLL_TIMEOUT_SECONDS = 7_200  # 2-hour budget, sized for the ultra8x processor
 # ultra8x can run for hours. Without a heartbeat the terminal is silent that
 # whole time and the tool looks frozen, which invites a needless Ctrl+C.
 _HEARTBEAT_SECONDS = 300
-_PER_CALL_TIMEOUT = 1_500      # ceiling per result() call; SDK enforces ~1800 s internally
+# result() long-polls, so nothing can be printed while it blocks. Keeping the
+# per-call ceiling at or below the heartbeat interval is what makes the
+# heartbeat actually fire on schedule; at the old 1500 s the terminal still
+# went quiet for 25 minutes at a stretch. A ready result returns immediately
+# regardless, so a shorter ceiling costs only an extra status check.
+_PER_CALL_TIMEOUT = _HEARTBEAT_SECONDS
 _RETRY_SLEEP = 30              # seconds to wait between retries
 
 

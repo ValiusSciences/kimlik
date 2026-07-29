@@ -42,7 +42,7 @@ A generic lung panel silently mislabels the tumor compartment; a generic bone pa
 kimlik is neither free nor fast. Know this before your first run:
 
 - It calls **three paid APIs**: OpenAI, Anthropic, and Parallel.ai. You need an account with billing enabled at all three. There is no single-provider mode; the cross-checking between them is the point.
-- A run takes **30 minutes to 2 hours**, most of it waiting on deep research.
+- A run takes **about 45 to 60 minutes**, most of it waiting on deep research. Budget up to 2 hours; that is the built-in timeout.
 - You need **Python 3.11 or newer**.
 
 **What it costs.** The example run in this repo produced 316 KB of reports, roughly 80,000 output tokens across six model calls, plus about 90,000 tokens of input for the consolidation and merge steps. The Parallel.ai processor and the OpenAI reasoning model dominate the bill.
@@ -332,15 +332,21 @@ The tool never reads your expression matrices, count files, or any patient-level
 
 ## Runtime expectations
 
-| Provider | Typical duration | Notes |
-|---|---|---|
-| OpenAI gpt-5.5-pro | 2–10 min | Reasoning model; duration varies with output length |
-| Parallel.ai ultra8x | 5 min – 2 hr | Deep multi-source research; most thorough |
-| Anthropic claude-opus-5 | 3–15 min | Runs an agentic tool loop with PubMed + web search |
-| Phase 2 consolidation | 2–8 min | Runs after all Phase 1 outputs are ready |
-| Phase 3 final merge | 2–5 min | Runs after both Phase 2 reports are ready |
+Measured across two full runs of the example case. Your times will vary with the tumor type and how much literature exists for it, but the shape holds: Parallel.ai sets the pace.
 
-Phase 1 providers run **concurrently**, so total wall time is determined by the slowest one (usually Parallel.ai).
+| Stage | Measured | Notes |
+|---|---|---|
+| Phase 1, Parallel.ai `ultra8x` | 30 - 44 min | Deep multi-source research; the long pole |
+| Phase 1, OpenAI `gpt-5.5-pro` | 12 - 14 min | Reasoning model; varies with output length |
+| Phase 1, Anthropic `claude-opus-5` | 8 - 9 min | Agentic loop; ran 15 PubMed searches in one run |
+| Phase 2, Anthropic | 8 min | Starts once all Phase 1 outputs are ready |
+| Phase 2, OpenAI | 3 - 4 min | Runs concurrently with Phase 2 Anthropic |
+| Phase 3, final merge | 7 - 9 min | Starts once both Phase 2 reports are ready |
+| **Total wall clock** | **about 47 min** | Uninterrupted run, defaults, all three providers |
+
+Phase 1 providers run **concurrently**, so the total is set by the slowest one rather than the sum. The run summary prints the duration of every stage plus the total, so you can see where your time actually went.
+
+The 2-hour figure elsewhere in this README is the built-in timeout, not an expectation.
 
 ---
 
