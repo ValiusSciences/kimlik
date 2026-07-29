@@ -4,6 +4,9 @@ import time
 from parallel import Parallel
 
 _POLL_TIMEOUT_SECONDS = 7_200  # 2-hour budget, sized for the ultra8x processor
+# ultra8x can run for hours. Without a heartbeat the terminal is silent that
+# whole time and the tool looks frozen, which invites a needless Ctrl+C.
+_HEARTBEAT_SECONDS = 300
 _PER_CALL_TIMEOUT = 1_500      # ceiling per result() call; SDK enforces ~1800 s internally
 _RETRY_SLEEP = 30              # seconds to wait between retries
 
@@ -32,7 +35,9 @@ def get_parallel_result(run_id: str) -> str:
     the 2-hour budget runs out.
     """
     client = Parallel(api_key=os.environ["PARALLEL_API_KEY"])
-    deadline = time.time() + _POLL_TIMEOUT_SECONDS
+    started = time.time()
+    deadline = started + _POLL_TIMEOUT_SECONDS
+    next_heartbeat = started + _HEARTBEAT_SECONDS
 
     while time.time() < deadline:
         try:
@@ -42,6 +47,15 @@ def get_parallel_result(run_id: str) -> str:
         except Exception as exc:
             msg = str(exc).lower()
             if any(s in msg for s in _TRANSIENT_ERRORS):
+                now = time.time()
+                if now >= next_heartbeat:
+                    elapsed = int(now - started) // 60
+                    remaining = int(deadline - now) // 60
+                    print(
+                        f"  Parallel.ai still researching: {elapsed} min elapsed, "
+                        f"will keep waiting up to {remaining} more min."
+                    )
+                    next_heartbeat = now + _HEARTBEAT_SECONDS
                 time.sleep(_RETRY_SLEEP)
                 continue
             raise

@@ -105,7 +105,7 @@ async def run_anthropic(prompt: str, model: str, use_tools: bool = True) -> str:
     messages: list[dict] = [{"role": "user", "content": prompt}]
     tools = [_WEB_SEARCH_TOOL, _PUBMED_TOOL] if use_tools else []
 
-    for _ in range(_MAX_TOOL_TURNS):
+    for turn in range(_MAX_TOOL_TURNS):
         kwargs: dict = {
             "model": model,
             "max_tokens": _MAX_TOKENS,
@@ -129,7 +129,7 @@ async def run_anthropic(prompt: str, model: str, use_tools: bool = True) -> str:
             # while missing whole sections (typically the trailing references).
             print(
                 f"WARNING: Anthropic response hit the {_MAX_TOKENS} token ceiling "
-                "and was truncated. The report is incomplete — raise _MAX_TOKENS "
+                "and was truncated. The report is incomplete. Raise _MAX_TOKENS "
                 "in anthropic_provider.py and re-run this phase."
             )
             break
@@ -167,5 +167,20 @@ async def run_anthropic(prompt: str, model: str, use_tools: bool = True) -> str:
 
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
+            # Literature lookups take minutes; show that work is happening.
+            queries = [
+                b.input.get("query", "")
+                for b in response.content
+                if getattr(b, "type", None) == "tool_use" and b.name == "pubmed_search"
+            ]
+            detail = f": {queries[0][:60]}" if queries else ""
+            print(f"  searching literature (round {turn + 1}/{_MAX_TOOL_TURNS}){detail}")
+    else:
+        # Ran out of turns while still calling tools, so the model never wrote
+        # its report. Returning here would hand back an empty string.
+        print(
+            f"WARNING: Anthropic used all {_MAX_TOOL_TURNS} tool rounds without "
+            "producing a report. The result will be empty or partial."
+        )
 
     return _extract_text(response.content)

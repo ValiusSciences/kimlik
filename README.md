@@ -6,7 +6,24 @@
 
 It queries three LLM providers in parallel, has two of them independently consolidate the results, then merges those into a single definitive guide, with citations to peer-reviewed literature at every step.
 
-### Why site-specific panels matter
+---
+
+## What you get
+
+One Markdown guide you can read or hand to a collaborator. Here is a fragment of the [committed example run](results/example-osteosarcoma-lung-met/phase3_final.md), a lung biopsy of metastatic osteosarcoma:
+
+| Cell type | Core markers | Notes | Refs |
+|---|---|---|---|
+| **Lung epithelium** | `EPCAM, KRT8, KRT18, KRT19, CDH1` | Surfactant RNA is often ambient; require coherent co-expression | [52-57] |
+| **Mesothelium (pleura)** | `MSLN, UPK3B, WT1, CALB2, ITLN1` | Common in pleural-based biopsies; frequently misannotated | [52, 53, 65] |
+| **Skeletal myocyte / myoblast** | `MYL1, MYLPF, TNNT1, ACTA1, MYOD1` | Discrete cluster in limb osteosarcoma; **should be absent in lung** | [1] |
+| **Cycling (any lineage)** | `MKI67, TOP2A, CCNB1, CENPF, PCNA` | Annotate as "cycling (parent lineage)", never as its own type | [118] |
+
+That guide is 82 KB with 145 references. **Read it before you run anything.** It costs nothing and shows exactly what the tool produces.
+
+---
+
+## Why site-specific panels matter
 
 For a primary tumor, a stock tissue panel usually gets you most of the way. The problem appears once disease spreads, because **a metastatic biopsy contains cells that do not belong to the tissue it was taken from.**
 
@@ -17,6 +34,55 @@ Take osteosarcoma that has metastasized to lung, the example shipped in this rep
 - **A tumor microenvironment** shaped by both.
 
 A generic lung panel silently mislabels the tumor compartment; a generic bone panel misses the microenvironment. `kimlik` is built for exactly this case: you give it both the site *and* the diagnosis, and the report covers the resident tissue, the metastatic tumor lineage, and the immune and stromal compartments together.
+
+---
+
+## Before you start
+
+kimlik is neither free nor fast. Know this before your first run:
+
+- It calls **three paid APIs**: OpenAI, Anthropic, and Parallel.ai. You need an account with billing enabled at all three. There is no single-provider mode; the cross-checking between them is the point.
+- A run takes **30 minutes to 2 hours**, most of it waiting on deep research.
+- You need **Python 3.11 or newer**.
+
+**What it costs.** The example run in this repo produced 316 KB of reports, roughly 80,000 output tokens across six model calls, plus about 90,000 tokens of input for the consolidation and merge steps. The Parallel.ai processor and the OpenAI reasoning model dominate the bill.
+
+Provider rates change often, so rather than print figures here that quietly go stale, check them against the footprint above:
+
+| Provider | Pricing |
+|---|---|
+| OpenAI | https://openai.com/api/pricing/ |
+| Anthropic | https://www.anthropic.com/pricing |
+| Parallel.ai | https://docs.parallel.ai |
+
+To spend less, drop to a cheaper research processor and a smaller reasoning model (see [Choosing models](#choosing-models)):
+
+```bash
+kimlik -b "..." -t "..." --parallel-processor ultra4x --openai-phase1-model gpt-5.5
+```
+
+---
+
+## Quick start
+
+```bash
+# 1. Install
+git clone <this-repo> && cd kimlik
+uv sync
+
+# 2. Add your three API keys
+cp .env.example .env     # then open .env and paste your keys in
+
+# 3. Run
+uv run kimlik \
+  -b "right lung" \
+  -t "metastatic osteosarcoma (primary: distal femur)" \
+  -o ./my_run
+```
+
+When it finishes, read `my_run/phase3_final.md`. If the run is interrupted at any point, re-run the exact same command and it picks up where it left off without repaying for finished work.
+
+The sections below cover installation alternatives, keys, and every option in detail.
 
 ---
 
@@ -38,13 +104,6 @@ Phase 3 (final merge; receives both Phase 2 reports as context)
 ```
 
 All outputs are saved to a folder you specify. A state file (`kimlik_state.json`) is written alongside the outputs so the tool can **resume** from exactly where it left off if interrupted.
-
----
-
-## Requirements
-
-- Python 3.11+
-- API keys for OpenAI, Anthropic, and Parallel.ai
 
 ---
 
@@ -326,6 +385,8 @@ Both providers now report truncation rather than swallowing it: OpenAI on an `in
 
 A quick sanity check on any run: a complete report ends with its last reference, not mid-sentence or mid-table-row.
 
+The other end of the same problem is a report that never gets written at all. A model can spend every tool round searching and return nothing, so any output shorter than 500 characters is rejected as a failure instead of being saved and passed to the next phase.
+
 ### Anthropic: PubMed and web search
 
 The Anthropic provider runs an agentic tool loop with two tools enabled in Phase 1:
@@ -345,6 +406,15 @@ The `parallel-web` SDK is synchronous. It runs inside `asyncio.run_in_executor()
 
 **`ModuleNotFoundError: No module named 'parallel'`**
 The package is installed as `parallel-web` but imported as `parallel`. Run `uv sync` (or `pip install .`).
+
+**Nothing has printed for a long time. Is it stuck?**
+Almost certainly not. Deep research runs for tens of minutes with no visible activity, so each long wait prints a heartbeat every 5 minutes (`Parallel.ai still researching: 15 min elapsed`). If you are seeing those, it is working. Leave it. If you do interrupt it, re-running the same command resumes rather than restarting.
+
+**`Cannot start: missing API key(s)`**
+kimlik looks for a `.env` file **in the folder you run it from**, not in the folder where it was installed. The error prints the directory it checked. Either create `.env` there, or set the keys in your shell environment.
+
+**A provider `returned an empty report`**
+The model spent its whole budget searching without ever writing the report. Nothing is saved, because an empty file would silently flow into the next phase. Re-run the same command: finished providers are skipped and only the failed one is retried.
 
 **A provider returns `model not found`**
 Your account probably lacks access to a default model. Override it without touching the source; see [Choosing models](#choosing-models):

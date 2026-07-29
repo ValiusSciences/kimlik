@@ -47,9 +47,9 @@ def format_final(
     labels: dict[str, str],
 ) -> str:
     reports = (
-        f"## Consensus Report 1 — {labels['openai']}\n\n{openai_consensus}"
+        f"## Consensus Report 1: {labels['openai']}\n\n{openai_consensus}"
         "\n\n---\n\n"
-        f"## Consensus Report 2 — {labels['anthropic']}\n\n{anthropic_consensus}"
+        f"## Consensus Report 2: {labels['anthropic']}\n\n{anthropic_consensus}"
     )
     prompt = FINAL_PROMPT.format(biopsy_site=biopsy_site, tumor_diagnosis=tumor_diagnosis)
     return f"{reports}\n\n---\n\n{prompt}"

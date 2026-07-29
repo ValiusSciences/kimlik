@@ -14,6 +14,9 @@ PHASE2_MAX_TOKENS = 64_000
 _HTTP_TIMEOUT = httpx.Timeout(timeout=60.0, connect=10.0)
 _POLL_INTERVAL = 30   # seconds between status checks
 _POLL_TIMEOUT = 7_200  # 2 hours total budget
+# Reasoning models can think for many minutes with no output; say something
+# periodically so the run does not look frozen.
+_HEARTBEAT_SECONDS = 300
 
 
 def _make_client() -> AsyncOpenAI:
@@ -35,7 +38,9 @@ async def submit_openai_task(prompt: str, model: str, max_tokens: int) -> str:
 async def get_openai_result(response_id: str) -> str:
     """Poll until the background response completes and return the text."""
     client = _make_client()
-    deadline = time.time() + _POLL_TIMEOUT
+    started = time.time()
+    deadline = started + _POLL_TIMEOUT
+    next_heartbeat = started + _HEARTBEAT_SECONDS
 
     while True:
         if time.time() > deadline:
@@ -58,6 +63,11 @@ async def get_openai_result(response_id: str) -> str:
             raise RuntimeError(
                 f"OpenAI response {response_id} ended with status: {response.status}"
             )
+
+        now = time.time()
+        if now >= next_heartbeat:
+            print(f"  OpenAI still working: {int(now - started) // 60} min elapsed.")
+            next_heartbeat = now + _HEARTBEAT_SECONDS
 
         await asyncio.sleep(_POLL_INTERVAL)
 

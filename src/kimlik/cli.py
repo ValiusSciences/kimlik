@@ -1,4 +1,5 @@
 import asyncio
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -39,6 +40,63 @@ console = Console()
 
 PHASE1_PROVIDERS = ["openai", "parallel", "anthropic"]
 PHASE2_PROVIDERS = ["openai", "anthropic"]
+
+# Where to get each credential, shown when one is missing.
+REQUIRED_API_KEYS = {
+    "OPENAI_API_KEY": "https://platform.openai.com/api-keys",
+    "ANTHROPIC_API_KEY": "https://console.anthropic.com/settings/keys",
+    "PARALLEL_API_KEY": "https://app.parallel.ai (Settings > API Keys)",
+}
+
+# A real report runs tens of thousands of characters. Anything this short means
+# the provider produced nothing usable, even though the API call "succeeded":
+# the Anthropic tool loop can exhaust its turns, or a response can come back
+# with no text blocks at all. Writing that out as a completed report would feed
+# an empty file into the next phase with nothing to indicate a problem.
+MIN_REPORT_CHARS = 500
+
+
+def check_api_keys() -> None:
+    """Stop before any work starts if credentials are missing.
+
+    Without this the run creates its output directory, submits to all three
+    providers, and then reports a bare KeyError once each one fails.
+    """
+    missing = [name for name in REQUIRED_API_KEYS if not os.environ.get(name)]
+    if not missing:
+        return
+
+    console.print("[red]Cannot start: missing API key(s).[/red]\n")
+    for name in missing:
+        console.print(f"  [bold]{name}[/bold]  get one at {REQUIRED_API_KEYS[name]}")
+
+    console.print(
+        f"\nkimlik reads keys from a [bold].env[/bold] file in the folder you run it from "
+        f"(currently [cyan]{Path.cwd()}[/cyan]), or from your shell environment.\n"
+        "\nTo fix, create a file named [bold].env[/bold] here containing:\n"
+    )
+    for name in REQUIRED_API_KEYS:
+        console.print(f"  {name}=your-key-here")
+    console.print("\nAll three providers are required for a run.")
+    raise typer.Exit(1)
+
+
+def write_report(output_dir: Path, filename: str, content: str, label: str) -> str:
+    """Write a provider's report, refusing to accept an empty or stunted one."""
+    stripped = content.strip()
+    if not stripped:
+        raise RuntimeError(
+            f"{label} returned an empty report. Nothing was written. "
+            "Re-run to retry; completed providers are skipped."
+        )
+    if len(stripped) < MIN_REPORT_CHARS:
+        raise RuntimeError(
+            f"{label} returned only {len(stripped)} characters, far short of a usable "
+            f"report (expected at least {MIN_REPORT_CHARS}). Treating this as a failure "
+            "rather than passing it to the next phase. Re-run to retry."
+        )
+    (output_dir / filename).write_text(content, encoding="utf-8")
+    return filename
 
 
 # ---------------------------------------------------------------------------
@@ -104,8 +162,9 @@ async def _run_phase1_provider(
         else:
             raise ValueError(f"Unknown provider: {name}")
 
-        output_file = f"phase1_{name}.md"
-        (output_dir / output_file).write_text(content, encoding="utf-8")
+        output_file = write_report(
+            output_dir, f"phase1_{name}.md", content, f"Phase 1 [{name}]"
+        )
 
         async with lock:
             ts["status"] = "completed"
@@ -156,8 +215,9 @@ async def _run_phase2_provider(
         else:
             raise ValueError(f"Unknown phase-2 provider: {name}")
 
-        output_file = f"phase2_{name}_consensus.md"
-        (output_dir / output_file).write_text(content, encoding="utf-8")
+        output_file = write_report(
+            output_dir, f"phase2_{name}_consensus.md", content, f"Phase 2 [{name}]"
+        )
 
         async with lock:
             ts["status"] = "completed"
@@ -239,7 +299,7 @@ async def run_pipeline(
     lock = asyncio.Lock()
 
     # ---- Phase 1 --------------------------------------------------------
-    console.rule("[bold]Phase 1 — independent reports[/bold]")
+    console.rule("[bold]Phase 1: independent reports[/bold]")
     phase1_prompt = format_phase1(biopsy_site, tumor_diagnosis)
 
     tasks = []
@@ -267,7 +327,7 @@ async def run_pipeline(
         if failures:
             console.print(
                 f"[red]{len(failures)} Phase 1 provider(s) failed. "
-                "Fix the error and re-run — completed providers will be skipped.[/red]"
+                "Fix the error and re-run; completed providers will be skipped.[/red]"
             )
             raise typer.Exit(1)
 
@@ -282,7 +342,7 @@ async def run_pipeline(
         raise typer.Exit(1)
 
     # ---- Phase 2 --------------------------------------------------------
-    console.rule("[bold]Phase 2 — consolidation[/bold]")
+    console.rule("[bold]Phase 2: consolidation[/bold]")
 
     phase1_outputs: dict[str, str] = {}
     for name in PHASE1_PROVIDERS:
@@ -319,7 +379,7 @@ async def run_pipeline(
         if failures:
             console.print(
                 f"[red]{len(failures)} Phase 2 provider(s) failed. "
-                "Re-run to retry — Phase 1 results are cached.[/red]"
+                "Re-run to retry; Phase 1 results are cached.[/red]"
             )
 
     state = load_state(output_dir)
@@ -332,7 +392,7 @@ async def run_pipeline(
         raise typer.Exit(1)
 
     # ---- Phase 3 — final merge ------------------------------------------
-    console.rule("[bold]Phase 3 — final merge[/bold]")
+    console.rule("[bold]Phase 3: final merge[/bold]")
 
     ts3 = state["phase3"]["anthropic"]
     if ts3["status"] == "completed":
@@ -364,8 +424,9 @@ async def run_pipeline(
         console.log(r"[cyan]Phase 3 \[anthropic] final merge started[/cyan]")
         try:
             content = await run_anthropic(final_prompt, models.anthropic, use_tools=False)
-            output_file = "phase3_final.md"
-            (output_dir / output_file).write_text(content, encoding="utf-8")
+            output_file = write_report(
+                output_dir, "phase3_final.md", content, "Phase 3 [anthropic]"
+            )
 
             async with lock:
                 ts3["status"] = "completed"
@@ -480,6 +541,7 @@ def main(
         ),
     ),
 ) -> None:
+    check_api_keys()
     models = ModelConfig.resolve(
         openai_phase1=openai_phase1_model,
         openai_phase2=openai_phase2_model,
