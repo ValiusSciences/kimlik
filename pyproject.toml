@@ -24,5 +24,35 @@ dependencies = [
 [project.scripts]
 kimlik = "kimlik.cli:app"
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/kimlik"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "W605", # invalid escape sequence — the trap behind the rich-markup fixes
+]
+
+[tool.ruff.lint.per-file-ignores]
+# typer declares options as argument defaults; that is the framework's idiom.
+"src/kimlik/cli.py" = ["B008"]

@@ -6,6 +6,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.ruff_cache/
 
 # Run outputs. These may be organized per case and hold real clinical runs,
 # so everything under results/ is ignored by default.

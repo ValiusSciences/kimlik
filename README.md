@@ -363,6 +363,21 @@ Re-run the same command. Phase 1 outputs are cached; only Phase 2 providers with
 
 ---
 
+## Development
+
+```bash
+uv sync --group dev
+
+uv run pytest        # 61 tests, ~1s
+uv run ruff check .
+```
+
+The test suite mocks every provider SDK, so it needs no API keys and makes no network calls — running it costs nothing. CI runs the same two commands on Python 3.11, 3.12, and 3.13, plus a build that installs the wheel and checks the CLI entry point.
+
+Note that several tests are regression guards for bugs that were subtle in production: silent truncation at the provider token ceilings, per-phase token budgets, and rich swallowing bracketed text in log lines and `--help`. If one of those fails, read the test's docstring before changing it.
+
+---
+
 ## Project structure
 
 ```
@@ -377,9 +392,11 @@ kimlik/
 │       ├── openai_provider.py        ← AsyncOpenAI (Responses API)
 │       ├── parallel_provider.py      ← parallel-web SDK (submit + poll with retry)
 │       └── anthropic_provider.py     ← AsyncAnthropic with agentic tool loop
+├── tests/                    ← offline suite; every provider SDK is mocked
 ├── results/
 │   └── example-osteosarcoma-lung-met/  ← committed demo run (see Example output)
-├── pyproject.toml            ← package metadata, deps, kimlik entry point
+├── .github/workflows/ci.yml  ← lint, test matrix, package build
+├── pyproject.toml            ← package metadata, deps, ruff + pytest config
 ├── requirements.txt          ← pip fallback
 ├── .python-version           ← pins Python 3.11 for uv
 ├── .env.example              ← copy to .env and fill in keys

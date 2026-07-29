@@ -1,7 +1,6 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 STATE_FILE = "kimlik_state.json"
 
@@ -28,7 +27,7 @@ def create_state(
         "tumor_diagnosis": tumor_diagnosis,
         "output_dir": output_dir,
         "models": models,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "phase1": {
             "openai": _make_task(),
             "parallel": _make_task(),
@@ -44,7 +43,7 @@ def create_state(
     }
 
 
-def load_state(output_dir: Path) -> Optional[dict]:
+def load_state(output_dir: Path) -> dict | None:
     path = output_dir / STATE_FILE
     if not path.exists():
         return None

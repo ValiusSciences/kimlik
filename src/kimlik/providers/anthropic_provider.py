@@ -1,7 +1,8 @@
 import asyncio
 import os
-import httpx
+
 import anthropic
+import httpx
 
 # These reports are long: dense marker tables plus a full bibliography. At the
 # old 16K ceiling every Anthropic response was silently cut off mid-table, which
@@ -69,7 +70,12 @@ async def _pubmed_search(query: str, max_results: int = 15) -> str:
         for attempt in range(4):
             fetch_resp = await client.get(
                 f"{base}/efetch.fcgi",
-                params={"db": "pubmed", "id": ",".join(ids), "rettype": "abstract", "retmode": "text"},
+                params={
+                    "db": "pubmed",
+                    "id": ",".join(ids),
+                    "rettype": "abstract",
+                    "retmode": "text",
+                },
             )
             if fetch_resp.status_code == 429:
                 await asyncio.sleep(2 ** attempt)

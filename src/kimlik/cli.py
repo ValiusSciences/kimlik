@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
@@ -17,7 +17,11 @@ from kimlik.config import (
 from kimlik.prompts import format_consolidation, format_final, format_phase1
 from kimlik.providers.anthropic_provider import run_anthropic
 from kimlik.providers.openai_provider import (
-    PHASE1_MAX_TOKENS, PHASE2_MAX_TOKENS, get_openai_result, run_openai, submit_openai_task,
+    PHASE1_MAX_TOKENS,
+    PHASE2_MAX_TOKENS,
+    get_openai_result,
+    run_openai,
+    submit_openai_task,
 )
 from kimlik.providers.parallel_provider import get_parallel_result, submit_parallel_task
 from kimlik.state import create_state, load_state, save_state
@@ -25,7 +29,10 @@ from kimlik.state import create_state, load_state, save_state
 load_dotenv()
 
 app = typer.Typer(
-    help="Generate tissue- and diagnosis-specific gene signatures for labeling cell types in scRNA-seq data.",
+    help=(
+        "Generate tissue- and diagnosis-specific gene signatures "
+        "for labeling cell types in scRNA-seq data."
+    ),
     add_completion=False,
 )
 console = Console()
@@ -51,7 +58,7 @@ async def _run_phase1_provider(
 
     async with lock:
         ts["status"] = "running"
-        ts["started_at"] = datetime.now(timezone.utc).isoformat()
+        ts["started_at"] = datetime.now(UTC).isoformat()
         save_state(output_dir, state)
 
     console.log(rf"[cyan]Phase 1 \[{name}] started[/cyan]")
@@ -65,7 +72,9 @@ async def _run_phase1_provider(
                 async with lock:
                     ts["task_id"] = response_id
                     save_state(output_dir, state)
-                console.log(rf"[cyan]Phase 1 \[openai] submitted → response_id={response_id}[/cyan]")
+                console.log(
+                    rf"[cyan]Phase 1 \[openai] submitted → response_id={response_id}[/cyan]"
+                )
             else:
                 response_id = ts["task_id"]
                 console.log(rf"[cyan]Phase 1 \[openai] resuming response_id={response_id}[/cyan]")
@@ -101,7 +110,7 @@ async def _run_phase1_provider(
         async with lock:
             ts["status"] = "completed"
             ts["output_file"] = output_file
-            ts["completed_at"] = datetime.now(timezone.utc).isoformat()
+            ts["completed_at"] = datetime.now(UTC).isoformat()
             ts["error"] = None
             save_state(output_dir, state)
 
@@ -111,7 +120,7 @@ async def _run_phase1_provider(
         async with lock:
             ts["status"] = "failed"
             ts["error"] = str(exc)
-            ts["completed_at"] = datetime.now(timezone.utc).isoformat()
+            ts["completed_at"] = datetime.now(UTC).isoformat()
             save_state(output_dir, state)
         console.log(rf"[red]Phase 1 \[{name}] failed: {exc}[/red]")
         raise
@@ -134,7 +143,7 @@ async def _run_phase2_provider(
 
     async with lock:
         ts["status"] = "running"
-        ts["started_at"] = datetime.now(timezone.utc).isoformat()
+        ts["started_at"] = datetime.now(UTC).isoformat()
         save_state(output_dir, state)
 
     console.log(rf"[cyan]Phase 2 \[{name}] consolidation started[/cyan]")
@@ -153,7 +162,7 @@ async def _run_phase2_provider(
         async with lock:
             ts["status"] = "completed"
             ts["output_file"] = output_file
-            ts["completed_at"] = datetime.now(timezone.utc).isoformat()
+            ts["completed_at"] = datetime.now(UTC).isoformat()
             ts["error"] = None
             save_state(output_dir, state)
 
@@ -163,7 +172,7 @@ async def _run_phase2_provider(
         async with lock:
             ts["status"] = "failed"
             ts["error"] = str(exc)
-            ts["completed_at"] = datetime.now(timezone.utc).isoformat()
+            ts["completed_at"] = datetime.now(UTC).isoformat()
             save_state(output_dir, state)
         console.log(rf"[red]Phase 2 \[{name}] failed: {exc}[/red]")
         raise
@@ -237,7 +246,9 @@ async def run_pipeline(
     for name in PHASE1_PROVIDERS:
         ts = state["phase1"][name]
         if ts["status"] == "completed":
-            console.print(rf"  Phase 1 \[{name}]: already completed ({ts['output_file']}), skipping.")
+            console.print(
+                rf"  Phase 1 \[{name}]: already completed ({ts['output_file']}), skipping."
+            )
         else:
             if ts["status"] == "failed":
                 # Reset so we retry cleanly
@@ -286,7 +297,9 @@ async def run_pipeline(
     for name in PHASE2_PROVIDERS:
         ts = state["phase2"][name]
         if ts["status"] == "completed":
-            console.print(rf"  Phase 2 \[{name}]: already completed ({ts['output_file']}), skipping.")
+            console.print(
+                rf"  Phase 2 \[{name}]: already completed ({ts['output_file']}), skipping."
+            )
         else:
             if ts["status"] == "failed":
                 ts["status"] = "pending"
@@ -345,7 +358,7 @@ async def run_pipeline(
 
         async with lock:
             ts3["status"] = "running"
-            ts3["started_at"] = datetime.now(timezone.utc).isoformat()
+            ts3["started_at"] = datetime.now(UTC).isoformat()
             save_state(output_dir, state)
 
         console.log(r"[cyan]Phase 3 \[anthropic] final merge started[/cyan]")
@@ -357,7 +370,7 @@ async def run_pipeline(
             async with lock:
                 ts3["status"] = "completed"
                 ts3["output_file"] = output_file
-                ts3["completed_at"] = datetime.now(timezone.utc).isoformat()
+                ts3["completed_at"] = datetime.now(UTC).isoformat()
                 ts3["error"] = None
                 save_state(output_dir, state)
 
@@ -366,10 +379,10 @@ async def run_pipeline(
             async with lock:
                 ts3["status"] = "failed"
                 ts3["error"] = str(exc)
-                ts3["completed_at"] = datetime.now(timezone.utc).isoformat()
+                ts3["completed_at"] = datetime.now(UTC).isoformat()
                 save_state(output_dir, state)
             console.log(rf"[red]Phase 3 \[anthropic] failed: {exc}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from exc
 
     # ---- Summary --------------------------------------------------------
     state = load_state(output_dir)
@@ -437,22 +450,34 @@ def main(
     openai_phase1_model: str = typer.Option(
         None,
         "--openai-phase1-model",
-        help=rf"OpenAI model for Phase 1 research \[env: KIMLIK_OPENAI_PHASE1_MODEL] \[default: {DEFAULT_OPENAI_PHASE1_MODEL}]",
+        help=(
+            rf"OpenAI model for Phase 1 research "
+            rf"\[env: KIMLIK_OPENAI_PHASE1_MODEL] \[default: {DEFAULT_OPENAI_PHASE1_MODEL}]"
+        ),
     ),
     openai_phase2_model: str = typer.Option(
         None,
         "--openai-phase2-model",
-        help=rf"OpenAI model for Phase 2 consolidation \[env: KIMLIK_OPENAI_PHASE2_MODEL] \[default: {DEFAULT_OPENAI_PHASE2_MODEL}]",
+        help=(
+            rf"OpenAI model for Phase 2 consolidation "
+            rf"\[env: KIMLIK_OPENAI_PHASE2_MODEL] \[default: {DEFAULT_OPENAI_PHASE2_MODEL}]"
+        ),
     ),
     anthropic_model: str = typer.Option(
         None,
         "--anthropic-model",
-        help=rf"Anthropic model for all phases \[env: KIMLIK_ANTHROPIC_MODEL] \[default: {DEFAULT_ANTHROPIC_MODEL}]",
+        help=(
+            rf"Anthropic model for all phases "
+            rf"\[env: KIMLIK_ANTHROPIC_MODEL] \[default: {DEFAULT_ANTHROPIC_MODEL}]"
+        ),
     ),
     parallel_processor: str = typer.Option(
         None,
         "--parallel-processor",
-        help=rf"Parallel.ai processor \[env: KIMLIK_PARALLEL_PROCESSOR] \[default: {DEFAULT_PARALLEL_PROCESSOR}]",
+        help=(
+            rf"Parallel.ai processor "
+            rf"\[env: KIMLIK_PARALLEL_PROCESSOR] \[default: {DEFAULT_PARALLEL_PROCESSOR}]"
+        ),
     ),
 ) -> None:
     models = ModelConfig.resolve(
