@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Least privilege for the run token. Lint, test, and build only ever read the
+# tree, and on a public repo this workflow runs for pull requests from forks.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
