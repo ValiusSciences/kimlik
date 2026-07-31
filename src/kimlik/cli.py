@@ -36,7 +36,9 @@ app = typer.Typer(
     ),
     add_completion=False,
 )
-console = Console()
+# log_path=False drops the "cli.py:164" suffix rich appends to every log line.
+# It points at our source, which tells the person running a report nothing.
+console = Console(log_path=False)
 
 PHASE1_PROVIDERS = ["openai", "parallel", "anthropic"]
 PHASE2_PROVIDERS = ["openai", "anthropic"]
@@ -173,7 +175,7 @@ async def _run_phase1_provider(
                     ts["task_id"] = response_id
                     save_state(output_dir, state)
                 console.log(
-                    rf"[cyan]Phase 1 \[openai] submitted → response_id={response_id}[/cyan]"
+                    rf"[cyan]Phase 1 \[openai] submitted -> response_id={response_id}[/cyan]"
                 )
             else:
                 response_id = ts["task_id"]
@@ -191,7 +193,7 @@ async def _run_phase1_provider(
                 async with lock:
                     ts["task_id"] = run_id
                     save_state(output_dir, state)
-                console.log(rf"[cyan]Phase 1 \[parallel] submitted → run_id={run_id}[/cyan]")
+                console.log(rf"[cyan]Phase 1 \[parallel] submitted -> run_id={run_id}[/cyan]")
             else:
                 run_id = ts["task_id"]
                 console.log(rf"[cyan]Phase 1 \[parallel] resuming run_id={run_id}[/cyan]")
@@ -215,7 +217,7 @@ async def _run_phase1_provider(
             ts["error"] = None
             save_state(output_dir, state)
 
-        console.log(rf"[green]Phase 1 \[{name}] done → {output_file}[/green]")
+        console.log(rf"[green]Phase 1 \[{name}] done -> {output_file}[/green]")
 
     except Exception as exc:
         async with lock:
@@ -268,7 +270,7 @@ async def _run_phase2_provider(
             ts["error"] = None
             save_state(output_dir, state)
 
-        console.log(rf"[green]Phase 2 \[{name}] done → {output_file}[/green]")
+        console.log(rf"[green]Phase 2 \[{name}] done -> {output_file}[/green]")
 
     except Exception as exc:
         async with lock:
@@ -308,7 +310,7 @@ async def run_pipeline(
     if state is None:
         state = create_state(biopsy_site, tumor_diagnosis, str(output_dir), models.as_dict())
         save_state(output_dir, state)
-        console.print(f"[bold]New run[/bold] → [cyan]{output_dir}[/cyan]")
+        console.print(f"[bold]New run[/bold] -> [cyan]{output_dir}[/cyan]")
     else:
         if (
             state["biopsy_site"] != biopsy_site
@@ -477,7 +479,7 @@ async def run_pipeline(
                 ts3["error"] = None
                 save_state(output_dir, state)
 
-            console.log(rf"[green]Phase 3 \[anthropic] done → {output_file}[/green]")
+            console.log(rf"[green]Phase 3 \[anthropic] done -> {output_file}[/green]")
         except Exception as exc:
             async with lock:
                 ts3["status"] = "failed"
