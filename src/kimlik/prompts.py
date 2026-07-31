@@ -1,6 +1,6 @@
 # Phase 1: each provider independently researches and generates a report.
-# The "Attached are three reports" line from the user's original prompt is intentionally
-# omitted here because no reports exist yet — each provider generates its own from scratch.
+# Unlike the Phase 2 prompt below, this one says nothing about attached reports,
+# because none exist yet; every provider starts from scratch.
 PHASE1_PROMPT = (
     "I have single-cell sequencing data from a patient's biopsy ({biopsy_site}). "
     "This patient was originally diagnosed with a {tumor_diagnosis}. "
