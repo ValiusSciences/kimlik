@@ -316,7 +316,9 @@ Phase 3 (final merge; receives both Phase 2 reports as context)
 └── Anthropic claude-opus-5   -> phase3_final.md
 ```
 
-Three independent searches, two independent consolidations, one merge. A marker that only one provider proposes is visible as such in the Phase 1 files; a marker all three converge on carries more weight in the final guide.
+Three separate searches, two separate consolidations, one merge. A marker only one provider proposes stays visible as such in the Phase 1 files, which is the reason all six intermediate reports are kept rather than discarded.
+
+**What agreement between providers does and does not tell you.** Three models querying overlapping literature, and in places overlapping training data, are not three independent observers. Convergence here means the claim is well represented in the accessible literature, not that it has been independently replicated. Treat it as a way to surface and localise disagreement, not as evidence in its own right, and read the primary citation before acting on any marker.
 
 ## Data and privacy
 
