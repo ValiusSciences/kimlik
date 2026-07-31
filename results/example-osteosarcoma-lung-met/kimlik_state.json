@@ -13,7 +13,7 @@
     "openai": {
       "status": "completed",
       "output_file": "phase1_openai.md",
-      "task_id": "resp_0d9fd600bb2116eb006a697314283881a3aabec6c7c8c50423",
+      "task_id": "resp_EXAMPLE0000000000000000000000000000000000000000",
       "started_at": "2026-07-29T03:27:14.732454+00:00",
       "completed_at": "2026-07-29T03:39:26.504604+00:00",
       "error": null
@@ -21,7 +21,7 @@
     "parallel": {
       "status": "completed",
       "output_file": "phase1_parallel.md",
-      "task_id": "trun_a2d34604bfcd4f02bcd4cf39e2200004",
+      "task_id": "trun_EXAMPLE000000000000000000000000",
       "started_at": "2026-07-29T03:27:15.189696+00:00",
       "completed_at": "2026-07-29T04:11:21.785488+00:00",
       "error": null
