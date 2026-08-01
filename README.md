@@ -40,12 +40,7 @@ Take osteosarcoma that has metastasized to lung, the example shipped in this rep
 A generic lung panel silently mislabels the tumor compartment; a generic bone panel misses the microenvironment. `kimlik` is built for exactly this case: you give it both the site *and* the diagnosis, and the report covers the resident tissue, the metastatic tumor lineage, and the immune and stromal compartments together.
 
 ## What you need before you start
-
-kimlik is neither free nor fast. Please read this section fully before your first run.
-
-**1. A terminal.** kimlik has no graphical interface; you type a command and it prints progress. On macOS, open Spotlight (Cmd+Space) and type "Terminal". On Windows, open the Start menu and type "PowerShell". On Linux, any terminal will do. You do not need to know how to program, but you will be copying and pasting commands.
-
-**2. Accounts at three AI providers, each with billing enabled.** kimlik deliberately asks three independent providers the same question and cross-checks their answers, so all three are required. There is no single-provider mode.
+**1. Accounts at three AI providers, each with billing enabled.** kimlik deliberately asks three independent providers the same question and cross-checks their answers, so all three are required. There is no single-provider mode.
 
 | Provider | Sign up | Where to get your key |
 |---|---|---|
@@ -53,11 +48,10 @@ kimlik is neither free nor fast. Please read this section fully before your firs
 | Anthropic | https://console.anthropic.com | https://console.anthropic.com/settings/keys |
 | Parallel.ai | https://app.parallel.ai | https://app.parallel.ai then Settings > API Keys |
 
-An "API key" is a long secret string that lets a program use your account and bill you for it. Treat it like a password.
 
-**3. About an hour of waiting.** A run takes roughly 45 to 60 minutes, most of it spent waiting on deep literature research. You do not need to watch it. You do need to leave the terminal window open, though an interrupted run can be resumed.
+**2. About an hour of waiting.** A run takes roughly 45 to 60 minutes, most of it spent waiting on deep literature research. You do not need to watch it. You do need to leave the terminal window open, though an interrupted run can be resumed.
 
-**4. Money.** You pay the three providers directly for the tokens the run consumes. The example run in this repo produced 316 KB of reports, roughly 80,000 output tokens across six model calls, plus about 90,000 tokens of input for the consolidation and merge steps. The Parallel.ai processor and the OpenAI reasoning model dominate the bill.
+**4. Money.** You pay the three providers directly for the tokens the run consumes. The example run in this repo produced 316 KB of reports, roughly 80,000 output tokens across six model calls, plus about 90,000 tokens of input for the consolidation and merge steps. The example run costs about $15 OpenAI credits, about $15 Antrhopic credits, $5 Parallel.ai credits.
 
 Provider rates change often, so rather than print figures here that quietly go stale, check them against the footprint above:
 
@@ -73,7 +67,6 @@ To spend less, drop to a cheaper research processor and a smaller reasoning mode
 kimlik -b "..." -t "..." --parallel-processor ultra4x --openai-phase1-model gpt-5.5
 ```
 
-**5. Python 3.11 or newer.** If you use the recommended installer below, it handles Python for you and you can ignore this.
 
 ## Installing
 
