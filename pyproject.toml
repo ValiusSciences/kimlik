@@ -1,15 +1,37 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]  # >=1.27 for PEP 639 license expressions
 build-backend = "hatchling.build"
 
 [project]
-name = "kimlik"
-version = "1.0.0"
+# Distribution name is vendor-prefixed to match the other Valius packages;
+# the import name and CLI stay `kimlik`.
+name = "valius-kimlik"
+# Single source of truth is __version__ in src/kimlik/__init__.py; hatch reads
+# it at build time (see [tool.hatch.version]). Bump it there, not here.
+dynamic = ["version"]
 description = "Tissue- and diagnosis-specific gene signatures for labeling cell types in single-cell RNA-seq data"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Bulent Arman Aksoy", email = "arman@valiussciences.com" }]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "single-cell",
+    "scRNA-seq",
+    "cell-type-annotation",
+    "gene-signatures",
+    "bioinformatics",
+    "LLM",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+]
 
 dependencies = [
     "anthropic>=0.40.0",
@@ -21,6 +43,11 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ValiusSciences/kimlik"
+Repository = "https://github.com/ValiusSciences/kimlik"
+Issues = "https://github.com/ValiusSciences/kimlik/issues"
+
 [project.scripts]
 kimlik = "kimlik.cli:app"
 
@@ -30,6 +57,9 @@ dev = [
     "pytest-asyncio>=0.24",
     "ruff>=0.6",
 ]
+
+[tool.hatch.version]
+path = "src/kimlik/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kimlik"]

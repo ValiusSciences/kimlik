@@ -1,0 +1,93 @@
+# Publishes valius-kimlik to PyPI when a GitHub Release is published.
+#
+# Authentication is Trusted Publishing (OIDC): PyPI is configured to trust
+# this repo + this workflow filename + the `pypi` environment, and mints a
+# short-lived token per run. There is no API token stored in repo secrets.
+#
+# The TestPyPI job is manual (workflow_dispatch) so a dry run never needs a
+# throwaway Git tag; the real publish only ever fires on a published Release.
+
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which index to publish to
+        required: true
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build distributions
+        run: uv build
+
+      # Catches a broken long_description before it reaches the index, where
+      # a bad render cannot be fixed without burning a version number.
+      - name: Check distribution metadata
+        run: uvx twine check --strict dist/*
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    name: Publish to PyPI
+    needs: build
+    if: github.event_name == 'release' || inputs.target == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    # id-token: write is what lets the action request the OIDC credential.
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

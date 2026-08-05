@@ -1,8 +1,9 @@
 # kimlik
 
-[![CI](https://github.com/ValiusSciences/kimlik/workflows/CI/badge.svg)](https://github.com/ValiusSciences/kimlik/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/valius-kimlik)](https://pypi.org/project/valius-kimlik/)
+[![CI](https://github.com/ValiusSciences/kimlik/actions/workflows/ci.yml/badge.svg)](https://github.com/ValiusSciences/kimlik/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/pypi/pyversions/valius-kimlik)](https://pypi.org/project/valius-kimlik/)
+[![License: MIT](https://img.shields.io/pypi/l/valius-kimlik)](https://github.com/ValiusSciences/kimlik/blob/main/LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Research use only](https://img.shields.io/badge/use-research%20only-important.svg)](#data-and-privacy)
 
@@ -14,7 +15,7 @@ It queries three LLM providers in parallel, has two of them independently consol
 
 ## Read the example before you install anything
 
-A complete run is committed to this repository. Open **[`results/example-osteosarcoma-lung-met/phase3_final.md`](results/example-osteosarcoma-lung-met/phase3_final.md)** and read it in your browser right now. It costs nothing, needs no setup, and shows exactly what the tool produces.
+A complete run is committed to this repository. Open **[`results/example-osteosarcoma-lung-met/phase3_final.md`](https://github.com/ValiusSciences/kimlik/blob/main/results/example-osteosarcoma-lung-met/phase3_final.md)** and read it in your browser right now. It costs nothing, needs no setup, and shows exactly what the tool produces.
 
 It is a lung biopsy of metastatic osteosarcoma. Here is a fragment:
 
@@ -69,6 +70,22 @@ kimlik -b "..." -t "..." --parallel-processor ultra4x --openai-phase1-model gpt-
 
 
 ## Installing
+
+### Quickest: install from PyPI
+
+If you already have Python 3.11+ and a package manager you are comfortable with, this is the whole install. The distribution is named `valius-kimlik`; the command it installs is `kimlik`.
+
+```bash
+uv tool install valius-kimlik     # installs the `kimlik` command globally, in its own environment
+kimlik --help
+```
+
+```bash
+pip install valius-kimlik         # or, into whichever environment you are already using
+kimlik --help
+```
+
+Skip to [Setting up your API keys](#setting-up-your-api-keys) once that works. The step-by-step route below builds the same thing from a clone, and is worth following if you are new to Python tooling or want the example run and test suite alongside the code.
 
 ### Step 1: install uv
 
@@ -265,7 +282,7 @@ These are plain Markdown text files. You can open one in any text editor, but it
 
 ## The example output in detail
 
-Everything under [`results/example-osteosarcoma-lung-met/`](results/example-osteosarcoma-lung-met/) came from this one command:
+Everything under [`results/example-osteosarcoma-lung-met/`](https://github.com/ValiusSciences/kimlik/tree/main/results/example-osteosarcoma-lung-met/) came from this one command:
 
 ```bash
 kimlik \
@@ -532,4 +549,4 @@ kimlik/
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/ValiusSciences/kimlik/blob/main/LICENSE).
